@@ -4,8 +4,7 @@ import { useBooking } from "../state/BookingContext";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { setUser } = useBooking();
-
+const { setUser } = useBooking();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
@@ -13,20 +12,41 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // ✅ Simulated login success (replace with API later)
-    setTimeout(() => {
-      setUser({
-        name: "Bansari Der",
-        email: form.email,
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
-      localStorage.setItem("user", JSON.stringify({ name: "Bansari Der", email: form.email }));
+
+      const data = await res.json();
+
+      // ✅ Debug: log what backend sends
+      console.log("Login response:", data);
+
+      if (data.success) {
+        // ✅ Save user + token to localStorage
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
+
+        // ✅ Update context (important!)
+      setUser(data.user);
+
+        alert("✅ Login successful!");
+        navigate("/home"); // redirect to home page
+      } else {
+        alert(data.message || "❌ Invalid credentials, please try again.");
+      }
+    } catch (error) {
+      console.error("Login Error:", error);
+      alert("⚠️ Server error. Please try again later.");
+    } finally {
       setLoading(false);
-      navigate("/home"); // redirect to homepage after login
-    }, 1000);
+    }
   };
 
   return (
@@ -98,9 +118,19 @@ export default function Login() {
 
           <button
             type="submit"
-            className="btn"
             disabled={loading}
-            style={{ width: "100%", marginTop: "10px" }}
+            style={{
+              width: "100%",
+              backgroundColor: loading ? "#ccc" : "#ff7a00",
+              color: "#fff",
+              border: "none",
+              padding: "12px 0",
+              borderRadius: "8px",
+              fontWeight: "600",
+              fontSize: "16px",
+              cursor: loading ? "not-allowed" : "pointer",
+              transition: "all 0.3s ease",
+            }}
           >
             {loading ? "Logging in..." : "Login"}
           </button>

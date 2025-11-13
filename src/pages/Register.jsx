@@ -17,21 +17,33 @@ export default function Register() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    // ✅ Simulated registration success (replace with API later)
-    setTimeout(() => {
-      setUser({
-        name: form.name,
-        email: form.email,
-      });
-      localStorage.setItem("user", JSON.stringify({ name: form.name, email: form.email }));
-      setLoading(false);
-      navigate("/home");
-    }, 1000);
-  };
+  try {
+    const res = await fetch("http://localhost:5000/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ Registration successful! Please login now.");
+      navigate("/login");
+    } else {
+      alert(data.message || "Registration failed ❌");
+    }
+  } catch (error) {
+    console.error("Register Error:", error);
+    alert("Server error, please try again later.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div

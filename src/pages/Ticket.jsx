@@ -9,19 +9,23 @@ export default function Ticket() {
   const navigate = useNavigate();
   const ticketRef = useRef();
 
-  const { bus, selectedSeats, paymentMethod } = location.state || {
-    bus: {
-      name: "Express Bus",
-      from: "City A",
-      to: "City B",
-      time: "09:00 - 12:00",
-      fare: 750,
-    },
-    selectedSeats: [1, 2],
-    paymentMethod: "UPI",
-  };
+  // 🧠 Retrieve saved data (for page refresh)
+  const savedTicket = JSON.parse(sessionStorage.getItem("ticketData"));
 
-  // 🧾 Download PDF Ticket
+  const {
+    bus = savedTicket?.bus,
+    selectedSeats = savedTicket?.selectedSeats,
+    bookingId = savedTicket?.bookingId,
+    totalAmount = savedTicket?.totalAmount,
+    perSeat = savedTicket?.perSeat,
+    paymentMethod = savedTicket?.paymentMethod,
+  } = location.state || {};
+
+  // ✅ Safe fallback for total fare
+  const calculatedTotal =
+    totalAmount || (selectedSeats?.length || 0) * (perSeat || 0);
+
+  // 🧾 Download Ticket as PDF
   const handleDownload = async () => {
     const ticket = ticketRef.current;
     const canvas = await html2canvas(ticket, { scale: 2 });
@@ -35,6 +39,36 @@ export default function Ticket() {
     pdf.save("GoBus_Ticket.pdf");
   };
 
+  // ⚠️ If no ticket data found (session cleared)
+  if (!bus || !selectedSeats) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "100px",
+          fontFamily: "'Poppins', sans-serif",
+        }}
+      >
+        <h2>⚠️ No ticket data found!</h2>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            marginTop: "20px",
+            padding: "10px 20px",
+            backgroundColor: "#ff7a00",
+            color: "#fff",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  }
+
+  // ✅ Ticket Display
   return (
     <div
       style={{
@@ -91,7 +125,7 @@ export default function Ticket() {
           Your GoBus ticket has been successfully booked.
         </p>
 
-        {/* ✅ Ticket Box */}
+        {/* ✅ Ticket Details */}
         <div
           style={{
             border: "2px dashed #ddd",
@@ -112,6 +146,7 @@ export default function Ticket() {
           >
             GoBus E-Ticket
           </h3>
+
           <p>
             <b>Bus Name:</b> {bus.name}
           </p>
@@ -128,9 +163,12 @@ export default function Ticket() {
             <b>Payment Method:</b> {paymentMethod}
           </p>
           <p>
+            <b>Fare per seat:</b> ₹{perSeat}
+          </p>
+          <p>
             <b>Total Fare:</b>{" "}
             <span style={{ color: "#ff7a00", fontWeight: "600" }}>
-              ₹{bus.fare || 750}
+              ₹{calculatedTotal}
             </span>
           </p>
 
@@ -139,7 +177,7 @@ export default function Ticket() {
             <QRCodeCanvas
               value={`GoBus | ${bus.from} → ${bus.to} | Seats: ${selectedSeats.join(
                 ", "
-              )} | Time: ${bus.time}`}
+              )} | Time: ${bus.time} | Amount: ₹${calculatedTotal}`}
               size={120}
               bgColor="#ffffff"
               fgColor="#000000"
@@ -179,7 +217,11 @@ export default function Ticket() {
           </button>
 
           <button
-            onClick={() => navigate("/home")}
+            onClick={() => {
+              // 🧹 Clear session data on exit
+              sessionStorage.removeItem("ticketData");
+              navigate("/home");
+            }}
             style={{
               backgroundColor: "#eee",
               color: "#333",

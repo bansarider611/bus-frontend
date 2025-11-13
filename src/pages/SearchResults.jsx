@@ -1,27 +1,44 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+// removed: import { fetchTrips } from "../api";
 
 export default function SearchResults() {
   const navigate = useNavigate();
 
-  // Search input form
   const [form, setForm] = useState({
     from: "",
     to: "",
     date: "",
   });
 
-  // When user clicks Search
   const [searched, setSearched] = useState(false);
+  const [availableBuses, setAvailableBuses] = useState([]); // always an array
+  const [loading, setLoading] = useState(false);
 
-  // Store available buses after search
-  const [availableBuses, setAvailableBuses] = useState([]);
-
+  // 🔹 Handle input
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSearch = (e) => {
+  // Helper: format ISO datetime to readable string
+  const formatDateTime = (iso) => {
+    try {
+      return new Date(iso).toLocaleString();
+    } catch {
+      return iso;
+    }
+  };
+
+  // small fare calc: ₹6 per km as placeholder (you can replace)
+  const estimateFare = (distanceKm) => {
+    if (!distanceKm) return 0;
+    const km = parseFloat(distanceKm);
+    if (isNaN(km)) return 0;
+    return Math.round(km * 6); // simple heuristic
+  };
+
+  // 🔹 Handle search button click
+  const handleSearch = async (e) => {
     e.preventDefault();
 
     if (!form.from || !form.to || !form.date) {
@@ -29,43 +46,51 @@ export default function SearchResults() {
       return;
     }
 
-    // Simulate API result for demo
-    const sampleBuses = [
-      {
-        id: 1,
-        name: "Express Bus",
-        departure: "12:50",
-        arrival: "17:45",
-        fare: "₹50",
-      },
-      {
-        id: 2,
-        name: "Metro Travels",
-        departure: "16:50",
-        arrival: "18:40",
-        fare: "₹130",
-      },
-      {
-        id: 3,
-        name: "CityLink",
-        departure: "16:50",
-        arrival: "17:45",
-        fare: "₹87",
-      },
-      {
-        id: 4,
-        name: "Super Deluxe",
-        departure: "14:30",
-        arrival: "19:55",
-        fare: "₹45",
-      },
-    ];
-
-    // Show results
-    setAvailableBuses(sampleBuses);
+    setLoading(true);
     setSearched(true);
+    setAvailableBuses([]); // clear previous
+
+    try {
+      // Directly call the backend search API
+      const encodedFrom = encodeURIComponent(form.from.trim());
+      const encodedTo = encodeURIComponent(form.to.trim());
+      const url = `http://localhost:5000/api/trip/search?from=${encodedFrom}&to=${encodedTo}`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data || !data.success) {
+        // handle both 404 response from backend and other failures
+        setAvailableBuses([]);
+        if (data && data.message) {
+          // show backend message only if returned
+          console.warn("Search result:", data.message);
+        }
+      } else {
+        // transform backend rows into the shape UI expects
+        const transformed = data.trips.map((t) => ({
+          id: t.ID,
+          name: t.BUS_NAME || "Unknown Bus",
+          departure: formatDateTime(t.DEPARTURE_TS),
+          arrival: formatDateTime(t.ARRIVAL_TS),
+          fare: t.PRICE,
+          startCity: t.START_CITY,
+          endCity: t.END_CITY,
+          raw: t, // keep original data if needed
+        }));
+
+        setAvailableBuses(transformed);
+      }
+    } catch (error) {
+      console.error("Error fetching trips:", error);
+      alert("Failed to fetch trips. Please try again.");
+      setAvailableBuses([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // 🔹 When user clicks "View Seats"
   const handleSeatSelection = (bus) => {
     navigate(`/select/${bus.id}`, { state: bus });
   };
@@ -92,7 +117,7 @@ export default function SearchResults() {
         Search Bus
       </h1>
 
-      {/* Search Section */}
+      {/* Search Form */}
       <form
         onSubmit={handleSearch}
         style={{
@@ -127,11 +152,11 @@ export default function SearchResults() {
           style={inputStyle}
         />
         <button type="submit" style={buttonStyle}>
-          Search Bus
+          {loading ? "Searching..." : "Search Bus"}
         </button>
       </form>
 
-      {/* Show Results After Search */}
+      {/* Search Results */}
       {searched && (
         <>
           <div
@@ -146,42 +171,54 @@ export default function SearchResults() {
             <b>{form.date}</b>
           </div>
 
-          <table style={tableStyle}>
-            <thead>
-              <tr style={{ backgroundColor: "#f9f9f9" }}>
-                <th style={thStyle}>Bus Name</th>
-                <th style={thStyle}>Departure</th>
-                <th style={thStyle}>Arrival</th>
-                <th style={thStyle}>Fare</th>
-                <th style={thStyle}>Seats Left</th>
-              </tr>
-            </thead>
-            <tbody>
-              {availableBuses.map((bus) => (
-                <tr key={bus.id} style={trStyle}>
-                  <td style={tdStyle}>{bus.name}</td>
-                  <td style={tdStyle}>{bus.departure}</td>
-                  <td style={tdStyle}>{bus.arrival}</td>
-                  <td style={tdStyle}>{bus.fare}</td>
-                  <td style={tdStyle}>
-                    <button
-                      style={viewSeatButton}
-                      onClick={() => handleSeatSelection(bus)}
-                    >
-                      View Seats
-                    </button>
-                  </td>
+          {loading ? (
+            <p style={{ textAlign: "center", color: "#999" }}>Loading...</p>
+          ) : availableBuses.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#999" }}>
+              No buses found.
+            </p>
+          ) : (
+            <table style={tableStyle}>
+              <thead>
+                <tr style={{ backgroundColor: "#f9f9f9" }}>
+                  <th style={thStyle}>Bus Name</th>
+                  <th style={thStyle}>Route</th>
+                  <th style={thStyle}>Departure</th>
+                  <th style={thStyle}>Arrival</th>
+                  <th style={thStyle}>Fare</th>
+                  <th style={thStyle}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {availableBuses.map((bus) => (
+                  <tr key={bus.id} style={trStyle}>
+                    <td style={tdStyle}>{bus.name}</td>
+                    <td style={tdStyle}>
+                      {bus.startCity} → {bus.endCity}
+                    </td>
+                    <td style={tdStyle}>{bus.departure}</td>
+                    <td style={tdStyle}>{bus.arrival}</td>
+                    <td style={tdStyle}>₹{bus.fare}</td>
+                    <td style={tdStyle}>
+                      <button
+                        style={viewSeatButton}
+                        onClick={() => handleSeatSelection(bus)}
+                      >
+                        View Seats
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </>
       )}
     </div>
   );
 }
 
-/* 🎨 CSS Styles */
+/* 🎨 Styles */
 const inputStyle = {
   padding: "10px 14px",
   border: "1px solid #ccc",

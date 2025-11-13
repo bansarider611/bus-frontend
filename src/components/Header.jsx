@@ -1,15 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useBooking } from "../state/BookingContext";
 
 export default function Header() {
-  const { user, setUser } = useBooking();
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
+  // ✅ Load user info from localStorage on page load or refresh
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) setUser(storedUser);
+  }, []);
+
+  // ✅ Logout handler
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to log out?")) {
+      // Clear everything related to session
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("ticketData");
+
       setUser(null);
-      navigate("/");
+      alert("👋 Logged out successfully!");
+      navigate("/login");
     }
   };
 
@@ -75,9 +87,21 @@ export default function Header() {
         {user ? (
           <>
             <span style={{ color: "var(--muted)", fontSize: "14px" }}>
-              Hi, {user.name?.split(" ")[0] || "User"}
+              👋 Hi, {user.name?.split(" ")[0] || user.email?.split("@")[0] || "User"}
             </span>
-            <button className="btn small" onClick={handleLogout}>
+            <button
+              className="btn small"
+              style={{
+                backgroundColor: "#ff7a00",
+                color: "#fff",
+                border: "none",
+                padding: "8px 14px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "600",
+              }}
+              onClick={handleLogout}
+            >
               Logout
             </button>
           </>
@@ -91,8 +115,6 @@ export default function Header() {
             </Link>
           </>
         )}
-
-       
       </nav>
     </header>
   );

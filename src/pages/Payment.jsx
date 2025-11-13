@@ -5,218 +5,295 @@ export default function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { bus, selectedSeats } = location.state || {
-    bus: {
-      name: "Express Bus",
-      from: "City A",
-      to: "City B",
-      time: "09:00 - 12:00",
-      fare: 750,
-    },
-    selectedSeats: [1, 2, 3],
-  };
+  const { bus, selectedSeats, bookingId, totalAmount, perSeat } =
+    location.state || {};
 
-  const [paymentMethod, setPaymentMethod] = useState("UPI");
-  const [isPaid, setIsPaid] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentDetails, setPaymentDetails] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handlePayment = () => {
-    setIsPaid(true);
+  if (!bus || !bookingId) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "100px",
+          fontFamily: "'Poppins', sans-serif",
+        }}
+      >
+        <h2>⚠️ No booking found!</h2>
+        <p>Please select seats and proceed again.</p>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            marginTop: "20px",
+            padding: "10px 20px",
+            backgroundColor: "#ff7a00",
+            color: "#fff",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  }
 
-    // Redirect to ticket page after 2 sec
-    setTimeout(() => {
-      navigate("/ticket", {
-        state: { bus, selectedSeats, paymentMethod },
+  // ✅ Handle Payment
+  const handlePayment = async () => {
+    if (!paymentMethod) {
+      alert("Please select a payment method.");
+      return;
+    }
+
+    if (!paymentDetails.trim()) {
+      alert("Please enter payment details.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // ✅ Create payment payload
+      const payload = {
+        booking_id: bookingId,
+        provider: paymentMethod,
+        provider_payment_id: "TXN_" + Date.now(), // unique fake transaction ID
+        status: "SUCCESSFUL",
+      };
+
+      // ✅ Send payment to backend (this triggers the email automatically)
+      const res = await fetch("http://localhost:5000/api/payment/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-    }, 2000);
+
+      const data = await res.json();
+
+      // ✅ Check actual backend response (not payment_id)
+      if (!res.ok || !data.success) {
+        alert(data.message || "Payment failed. Please try again.");
+        return;
+      }
+
+      // ✅ Save ticket info in sessionStorage (so it survives refresh)
+      sessionStorage.setItem(
+        "ticketData",
+        JSON.stringify({
+          bus,
+          selectedSeats,
+          bookingId,
+          totalAmount,
+          perSeat,
+          paymentMethod,
+        })
+      );
+
+      alert("✅ Payment Successful! Ticket will be sent to your email.");
+
+      // ✅ Redirect to Ticket page
+      navigate("/ticket", {
+        replace: true,
+        state: {
+          bus,
+          selectedSeats,
+          bookingId,
+          totalAmount,
+          perSeat,
+          paymentMethod,
+        },
+      });
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Something went wrong during payment.");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // ✅ Render Inputs for Different Payment Methods
+  const renderPaymentInput = () => {
+    switch (paymentMethod) {
+      case "UPI":
+        return (
+          <div style={{ marginTop: "10px" }}>
+            <label style={{ fontWeight: "600" }}>Enter UPI ID:</label>
+            <input
+              type="text"
+              placeholder="example@upi"
+              value={paymentDetails}
+              onChange={(e) => setPaymentDetails(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+        );
+      case "Credit Card":
+      case "Debit Card":
+        return (
+          <div style={{ marginTop: "10px" }}>
+            <label style={{ fontWeight: "600" }}>Card Number:</label>
+            <input
+              type="text"
+              placeholder="XXXX XXXX XXXX XXXX"
+              value={paymentDetails}
+              onChange={(e) => setPaymentDetails(e.target.value)}
+              style={inputStyle}
+              maxLength={19}
+            />
+          </div>
+        );
+      case "Net Banking":
+        return (
+          <div style={{ marginTop: "10px" }}>
+            <label style={{ fontWeight: "600" }}>Enter Bank Name:</label>
+            <input
+              type="text"
+              placeholder="e.g., SBI, HDFC, ICICI"
+              value={paymentDetails}
+              onChange={(e) => setPaymentDetails(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // ✅ Main Render
   return (
     <div
       style={{
         fontFamily: "'Poppins', sans-serif",
-        minHeight: "100vh",
         backgroundColor: "#fff",
+        minHeight: "100vh",
+        padding: "40px 5%",
         display: "flex",
-        justifyContent: "center",
+        flexDirection: "column",
         alignItems: "center",
-        padding: "50px 5%",
       }}
     >
+      <h2 style={{ fontSize: "28px", fontWeight: "700", color: "#222" }}>
+        Payment Page 💳
+      </h2>
+
+      {/* 🚌 Bus Info */}
       <div
         style={{
-          backgroundColor: "#fff",
-          borderRadius: "16px",
-          boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
-          padding: "40px 50px",
-          maxWidth: "800px",
-          width: "100%",
+          backgroundColor: "#fafafa",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+          borderRadius: "12px",
+          padding: "25px 40px",
+          marginTop: "30px",
+          width: "420px",
+          textAlign: "left",
         }}
       >
-        {isPaid ? (
-          <div
-            style={{
-              textAlign: "center",
-              color: "#222",
-            }}
-          >
+        <h3 style={{ color: "#ff7a00", marginBottom: "10px" }}>
+          {bus.name || "GoBus"}
+        </h3>
+        <p>
+          <b>From:</b> {bus.from}
+        </p>
+        <p>
+          <b>To:</b> {bus.to}
+        </p>
+        <p>
+          <b>Time:</b> {bus.time}
+        </p>
+        <p>
+          <b>Seats:</b> {selectedSeats.join(", ")}
+        </p>
+        <p>
+          <b>Fare per seat:</b> ₹{perSeat}
+        </p>
+        <p style={{ fontWeight: "700", color: "#222" }}>
+          <b>Total Amount:</b>{" "}
+          <span style={{ color: "#ff7a00" }}>₹{totalAmount}</span>
+        </p>
+      </div>
+
+      {/* 💳 Payment Method Section */}
+      <div
+        style={{
+          marginTop: "35px",
+          width: "420px",
+          backgroundColor: "#fafafa",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+          borderRadius: "12px",
+          padding: "25px 40px",
+        }}
+      >
+        <h3
+          style={{
+            fontWeight: "700",
+            fontSize: "18px",
+            marginBottom: "15px",
+            color: "#222",
+          }}
+        >
+          Select Payment Method:
+        </h3>
+
+        <div style={{ display: "grid", gap: "12px" }}>
+          {["UPI", "Credit Card", "Debit Card", "Net Banking"].map((method) => (
             <div
+              key={method}
+              onClick={() => setPaymentMethod(method)}
               style={{
-                width: "80px",
-                height: "80px",
-                backgroundColor: "#4CAF50",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                fontSize: "36px",
-                margin: "0 auto 20px",
+                border:
+                  paymentMethod === method
+                    ? "2px solid #ff7a00"
+                    : "2px solid #ddd",
+                borderRadius: "8px",
+                padding: "12px 16px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                backgroundColor:
+                  paymentMethod === method ? "#fff7f0" : "#ffffff",
               }}
             >
-              ✓
+              <b>{method}</b>
+              {paymentMethod === method && renderPaymentInput()}
             </div>
-            <h2 style={{ fontSize: "26px", fontWeight: "700" }}>
-              Payment Successful
-            </h2>
-            <p style={{ color: "#666", marginTop: "10px" }}>
-              Redirecting to your ticket...
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Title */}
-            <h2
-              style={{
-                textAlign: "center",
-                fontSize: "26px",
-                fontWeight: "700",
-                marginBottom: "30px",
-              }}
-            >
-              Confirm Payment
-            </h2>
+          ))}
+        </div>
 
-            {/* Ticket + Payment Info */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "20px",
-              }}
-            >
-              {/* Left Side - Ticket Details */}
-              <div
-                style={{
-                  flex: "1",
-                  minWidth: "300px",
-                  backgroundColor: "#f9f9f9",
-                  borderRadius: "12px",
-                  padding: "20px",
-                }}
-              >
-                <h3
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "700",
-                    marginBottom: "15px",
-                    color: "#333",
-                  }}
-                >
-                  Ticket Details
-                </h3>
-                <p>
-                  <b>Bus Name:</b> {bus.name}
-                </p>
-                <p>
-                  <b>From:</b> {bus.from}
-                </p>
-                <p>
-                  <b>To:</b> {bus.to}
-                </p>
-                <p>
-                  <b>Time:</b> {bus.time}
-                </p>
-                <p>
-                  <b>Seats:</b> {selectedSeats.join(", ")}
-                </p>
-                <p>
-                  <b>Total Fare:</b>{" "}
-                  <span style={{ color: "#ff7a00", fontWeight: "600" }}>
-                    ₹{bus.fare || 750}
-                  </span>
-                </p>
-              </div>
-
-              {/* Right Side - Payment Options */}
-              <div
-                style={{
-                  flex: "1",
-                  minWidth: "300px",
-                  backgroundColor: "#f9f9f9",
-                  borderRadius: "12px",
-                  padding: "20px",
-                }}
-              >
-                <h3
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "700",
-                    marginBottom: "15px",
-                    color: "#333",
-                  }}
-                >
-                  Select Payment
-                </h3>
-
-                {["UPI", "Card", "Net Banking"].map((method) => (
-                  <label
-                    key={method}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      marginBottom: "12px",
-                      cursor: "pointer",
-                      fontSize: "15px",
-                      color: "#444",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={method}
-                      checked={paymentMethod === method}
-                      onChange={() => setPaymentMethod(method)}
-                    />
-                    {method}
-                  </label>
-                ))}
-
-                <button
-                  onClick={handlePayment}
-                  style={{
-                    backgroundColor: "#ff7a00",
-                    border: "none",
-                    color: "#fff",
-                    padding: "12px 25px",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "15px",
-                    cursor: "pointer",
-                    marginTop: "10px",
-                    width: "100%",
-                    boxShadow: "0 4px 10px rgba(255,122,0,0.3)",
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  Pay ₹{bus.fare || 750}
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+        {/* 🟠 Pay Button */}
+        <button
+          onClick={handlePayment}
+          disabled={loading}
+          style={{
+            marginTop: "25px",
+            width: "100%",
+            backgroundColor: loading ? "#ccc" : "#ff7a00",
+            color: "#fff",
+            border: "none",
+            padding: "14px 0",
+            borderRadius: "8px",
+            fontWeight: "600",
+            fontSize: "16px",
+            cursor: loading ? "not-allowed" : "pointer",
+            boxShadow: "0 6px 14px rgba(255, 122, 0, 0.3)",
+            transition: "all 0.3s ease",
+          }}
+        >
+          {loading ? "Processing Payment..." : `Pay Now ₹${totalAmount}`}
+        </button>
       </div>
     </div>
   );
 }
+
+const inputStyle = {
+  width: "100%",
+  padding: "10px",
+  borderRadius: "6px",
+  border: "1px solid #ccc",
+  marginTop: "6px",
+  fontSize: "15px",
+  outline: "none",
+};

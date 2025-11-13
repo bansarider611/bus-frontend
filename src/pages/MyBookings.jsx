@@ -1,73 +1,196 @@
 import React, { useState, useEffect } from "react";
-import { useBooking } from "../state/BookingContext";
 import { useNavigate } from "react-router-dom";
 
 export default function MyBookings() {
-  const { user, currentBooking } = useBooking();
   const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
-      alert("Please login first!");
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.id) {
+      alert("Please log in to view your bookings.");
       navigate("/login");
       return;
     }
 
-    // Simulate fetching previous bookings (replace with API call later)
-    const stored = JSON.parse(localStorage.getItem("myBookings")) || [];
+    // ✅ Fetch bookings for the logged-in user
+    fetch(`http://localhost:5000/api/booking/user/${user.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("📦 Bookings API Response:", data);
+        if (data.success && data.bookings?.length > 0) {
+          setBookings(data.bookings);
+        } else {
+          setBookings([]);
+        }
+      })
+      .catch((err) => console.error("❌ Error fetching bookings:", err))
+      .finally(() => setLoading(false));
+  }, [navigate]);
 
-    // If there’s a current new booking, add it to the list
-    if (currentBooking && !stored.find(b => b.id === currentBooking.id)) {
-      stored.push(currentBooking);
-      localStorage.setItem("myBookings", JSON.stringify(stored));
-    }
-
-    setBookings(stored);
-  }, [user, currentBooking]);
-
-  const handleCancel = (id) => {
+  // ✅ Cancel Booking
+  const handleCancel = async (bookingId) => {
     if (!window.confirm("Are you sure you want to cancel this booking?")) return;
 
-    const updated = bookings.filter((b) => b.id !== id);
-    setBookings(updated);
-    localStorage.setItem("myBookings", JSON.stringify(updated));
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/booking/cancel/${bookingId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
-    alert("Booking cancelled successfully!");
+      const data = await res.json();
+
+      if (data.success) {
+        alert("✅ Booking cancelled successfully and seats freed!");
+        setBookings((prev) =>
+          prev.map((b) =>
+            b.BOOKING_ID === bookingId ? { ...b, STATUS: "CANCELLED" } : b
+          )
+        );
+      } else {
+        alert(data.message || "Failed to cancel booking.");
+      }
+    } catch (error) {
+      console.error("❌ Error cancelling booking:", error);
+      alert("Something went wrong while cancelling booking.");
+    }
   };
 
+  // 🧭 UI Rendering
+  if (loading)
+    return (
+      <h3 style={{ textAlign: "center", marginTop: "50px" }}>
+        Loading your bookings...
+      </h3>
+    );
+
+  if (bookings.length === 0)
+    return (
+      <h3 style={{ textAlign: "center", marginTop: "50px" }}>
+        No bookings found. <a href="/home">Book a trip now!</a>
+      </h3>
+    );
+
   return (
-    <div className="container card">
-      <h2 style={{ textAlign: "center" }}>My Bookings</h2>
+    <div
+      style={{
+        fontFamily: "'Poppins', sans-serif",
+        minHeight: "100vh",
+        backgroundColor: "#fff",
+        padding: "50px 5%",
+      }}
+    >
+      <h2
+        style={{
+          textAlign: "center",
+          color: "#ff7a00",
+          fontWeight: "700",
+          marginBottom: "30px",
+        }}
+      >
+        🚌 My Bookings
+      </h2>
 
-      {!user ? (
-        <p style={{ textAlign: "center" }}>Please login to view your bookings.</p>
-      ) : bookings.length === 0 ? (
-        <p style={{ textAlign: "center" }}>You have no bookings yet.</p>
-      ) : (
-        bookings.map((b) => (
-          <div key={b.id} className="trip-card">
-            <div>
-              <strong>{b.trip.name}</strong> <br />
-              <span className="trip-meta">
-                {b.trip.from} → {b.trip.to}
-              </span>
-              <br />
-              <small>Seats: {b.seats.join(", ")} | Fare: ₹{b.fare}</small>
-            </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: "20px",
+        }}
+      >
+        {bookings.map((b) => (
+          <div
+            key={b.BOOKING_ID}
+            style={{
+              border: "2px dashed #ddd",
+              borderRadius: "12px",
+              padding: "20px",
+              backgroundColor:
+                b.STATUS === "CANCELLED" ? "#f5f5f5" : "#fff7f0",
+              opacity: b.STATUS === "CANCELLED" ? 0.7 : 1,
+              boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+              transition: "all 0.3s ease",
+            }}
+          >
+            <h3 style={{ color: "#ff7a00", marginBottom: "8px" }}>
+              {b.BUS_NAME}
+            </h3>
 
-            <div>
-              <button
-                className="btn small"
-                style={{ background: "var(--danger)" }}
-                onClick={() => handleCancel(b.id)}
+            <p>
+              <b>Route:</b> {b.FROM_CITY} → {b.TO_CITY}
+            </p>
+            <p>
+              <b>Seats:</b> {b.SEATS}
+            </p>
+            <p>
+              <b>Amount:</b> ₹{parseFloat(b.AMOUNT).toFixed(2)}
+            </p>
+            <p>
+              <b>Status:</b>{" "}
+              <span
+                style={{
+                  color:
+                    b.STATUS === "CANCELLED"
+                      ? "red"
+                      : b.STATUS === "SUCCESSFUL"
+                      ? "green"
+                      : "#222",
+                  fontWeight: 600,
+                }}
               >
-                Cancel
-              </button>
-            </div>
+                {b.STATUS}
+              </span>
+            </p>
+            <p>
+              <b>Departure:</b>{" "}
+              {new Date(b.DEPARTURE_TS).toLocaleString("en-IN", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </p>
+            <p>
+              <b>Arrival:</b>{" "}
+              {new Date(b.ARRIVAL_TS).toLocaleString("en-IN", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </p>
+            <p style={{ fontSize: "13px", color: "#777" }}>
+              <b>Booked On:</b>{" "}
+              {new Date(b.CREATED_AT).toLocaleString("en-IN", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </p>
+
+            <button
+              onClick={() => handleCancel(b.BOOKING_ID)}
+              disabled={b.STATUS === "CANCELLED"}
+              style={{
+                backgroundColor:
+                  b.STATUS === "CANCELLED" ? "#ccc" : "#ff3b30",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "8px 16px",
+                fontWeight: "600",
+                marginTop: "10px",
+                cursor:
+                  b.STATUS === "CANCELLED" ? "not-allowed" : "pointer",
+                transition: "all 0.3s ease",
+              }}
+            >
+              {b.STATUS === "CANCELLED"
+                ? "Cancelled"
+                : "Cancel Booking"}
+            </button>
           </div>
-        ))
-      )}
+        ))}
+      </div>
     </div>
   );
 }
