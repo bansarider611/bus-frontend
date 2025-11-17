@@ -2,7 +2,7 @@ import axios from "axios";
 
 // ✅ Create Axios instance
 const api = axios.create({
-  baseURL: "/api", // Goes to http://localhost:5000/api via Vite proxy
+  baseURL: "/api", // Goes to "https://bus-backend-x2bc.onrender.com",/api via Vite proxy
 });
 
 // 🔍 Fetch trips based on route and date

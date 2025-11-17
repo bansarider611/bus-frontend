@@ -50,34 +50,31 @@ const { setUser } = useBooking();
   };
 
   return (
+  <div
+    style={{
+      width: "100%",
+      minHeight: "90vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "#fff",
+      paddingTop: "40px", // gives space below header
+    }}
+  >
     <div
       style={{
-        minHeight: "100vh",
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "linear-gradient(135deg, #ff7a00, #ff9a2b)",
+        width: "85%",
+        maxWidth: "1100px",
+        background: "#fff",
+        borderRadius: "12px",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.1)",
+        padding: "40px 50px",
       }}
     >
-      <div
-        style={{
-          background: "#fff",
-          padding: "40px 50px",
-          borderRadius: "12px",
-          boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
-          width: "350px",
-        }}
-      >
-        <h2
-          style={{
-            textAlign: "center",
-            marginBottom: "25px",
-            color: "#ff7a00",
-            fontWeight: 700,
-          }}
-        >
-          GoBus Login
-        </h2>
+      {/* LEFT : Login Form */}
+      <div style={{ flex: 1, paddingRight: "30px" }}>
+        <h1 style={{ fontSize: "34px", marginBottom: "25px" }}>Login</h1>
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: "20px" }}>
@@ -90,7 +87,7 @@ const { setUser } = useBooking();
               onChange={handleChange}
               style={{
                 width: "100%",
-                padding: "10px",
+                padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #ccc",
                 marginTop: "5px",
@@ -108,7 +105,7 @@ const { setUser } = useBooking();
               onChange={handleChange}
               style={{
                 width: "100%",
-                padding: "10px",
+                padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #ccc",
                 marginTop: "5px",
@@ -121,28 +118,38 @@ const { setUser } = useBooking();
             disabled={loading}
             style={{
               width: "100%",
-              backgroundColor: loading ? "#ccc" : "#ff7a00",
+              backgroundColor: "#ff7a00",
               color: "#fff",
               border: "none",
               padding: "12px 0",
               borderRadius: "8px",
-              fontWeight: "600",
               fontSize: "16px",
+              fontWeight: "600",
               cursor: loading ? "not-allowed" : "pointer",
-              transition: "all 0.3s ease",
+              transition: "0.3s",
             }}
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p style={{ textAlign: "center", marginTop: "20px" }}>
+        <p style={{ marginTop: "20px" }}>
           Don’t have an account?{" "}
           <Link to="/register" style={{ color: "#ff7a00", fontWeight: 600 }}>
             Register
           </Link>
         </p>
       </div>
+
+      {/* RIGHT : SVG Illustration */}
+      <div style={{ flex: 1, textAlign: "center" }}>
+        <img
+          src="/Login-pana.svg"
+          alt="login illustration"
+          style={{ width: "100%", maxWidth: "430px" }}
+        />
+      </div>
     </div>
-  );
+  </div>
+);
 }

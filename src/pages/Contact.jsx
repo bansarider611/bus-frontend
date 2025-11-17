@@ -6,22 +6,38 @@ export default function Contact() {
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!name || !email || !message) {
-      alert("Please fill all fields!");
-      return;
+  if (!name || !email || !message) {
+    alert("Please fill all fields!");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:5000/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, message }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      setSubmitted(true);
+      setName("");
+      setEmail("");
+      setMessage("");
+      setTimeout(() => setSubmitted(false), 3000);
+    } else {
+      alert("Error sending message: " + data.message);
     }
+  } catch (error) {
+    alert("Something went wrong!");
+    console.error(error);
+  }
+};
 
-    // Simulate sending message (can be connected to backend later)
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
-
-    setName("");
-    setEmail("");
-    setMessage("");
-  };
 
   return (
     <div className="container card" style={{ maxWidth: 600 }}>
@@ -68,7 +84,7 @@ export default function Contact() {
       )}
 
       <div style={{ marginTop: 30, textAlign: "center", color: "var(--muted)" }}>
-        <p>📧 support@swiftbus.com</p>
+        <p>📧 support@Gobus.com</p>
         <p>📞 +91 98765 43210</p>
         <p>🏢 123 Swift Street, Ahmedabad, India</p>
       </div>

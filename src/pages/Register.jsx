@@ -46,38 +46,36 @@ export default function Register() {
 
 
   return (
+  <div
+    style={{
+      width: "100%",
+      minHeight: "90vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "#fff",
+      paddingTop: "40px",
+    }}
+  >
     <div
       style={{
-        minHeight: "100vh",
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "linear-gradient(135deg, #ff7a00, #ff9a2b)",
+        width: "85%",
+        maxWidth: "1100px",
+        background: "#fff",
+        borderRadius: "12px",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.1)",
+        padding: "40px 50px",
       }}
     >
-      <div
-        style={{
-          background: "#fff",
-          padding: "40px 50px",
-          borderRadius: "12px",
-          boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
-          width: "350px",
-        }}
-      >
-        <h2
-          style={{
-            textAlign: "center",
-            marginBottom: "25px",
-            color: "#ff7a00",
-            fontWeight: 700,
-          }}
-        >
-          GoBus Register
-        </h2>
+      {/* LEFT : Register Form */}
+      <div style={{ flex: 1, paddingRight: "30px" }}>
+        <h1 style={{ fontSize: "34px", marginBottom: "25px" }}>Register</h1>
 
         <form onSubmit={handleSubmit}>
+          {/* NAME */}
           <div style={{ marginBottom: "20px" }}>
-            <label>Full Name</label>
+            <label>Name</label>
             <input
               type="text"
               name="name"
@@ -86,7 +84,7 @@ export default function Register() {
               onChange={handleChange}
               style={{
                 width: "100%",
-                padding: "10px",
+                padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #ccc",
                 marginTop: "5px",
@@ -94,6 +92,7 @@ export default function Register() {
             />
           </div>
 
+          {/* EMAIL */}
           <div style={{ marginBottom: "20px" }}>
             <label>Email</label>
             <input
@@ -104,7 +103,7 @@ export default function Register() {
               onChange={handleChange}
               style={{
                 width: "100%",
-                padding: "10px",
+                padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #ccc",
                 marginTop: "5px",
@@ -112,6 +111,7 @@ export default function Register() {
             />
           </div>
 
+          {/* PASSWORD */}
           <div style={{ marginBottom: "20px" }}>
             <label>Password</label>
             <input
@@ -122,7 +122,7 @@ export default function Register() {
               onChange={handleChange}
               style={{
                 width: "100%",
-                padding: "10px",
+                padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #ccc",
                 marginTop: "5px",
@@ -130,23 +130,44 @@ export default function Register() {
             />
           </div>
 
+          {/* REGISTER BUTTON */}
           <button
             type="submit"
-            className="btn"
             disabled={loading}
-            style={{ width: "100%", marginTop: "10px" }}
+            style={{
+              width: "100%",
+              backgroundColor: "#ff7a00",
+              color: "#fff",
+              border: "none",
+              padding: "12px 0",
+              borderRadius: "8px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: loading ? "not-allowed" : "pointer",
+              transition: "0.3s",
+            }}
           >
-            {loading ? "Creating Account..." : "Register"}
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
-        <p style={{ textAlign: "center", marginTop: "20px" }}>
+        <p style={{ marginTop: "20px" }}>
           Already have an account?{" "}
           <Link to="/login" style={{ color: "#ff7a00", fontWeight: 600 }}>
             Login
           </Link>
         </p>
       </div>
+
+      {/* RIGHT : SVG Illustration */}
+      <div style={{ flex: 1, textAlign: "center" }}>
+        <img
+          src="/Register-pana.svg"
+          alt="register illustration"
+          style={{ width: "100%", maxWidth: "430px" }}
+        />
+      </div>
     </div>
-  );
+  </div>
+);
 }

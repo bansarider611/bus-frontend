@@ -12,7 +12,7 @@ export default function Footer() {
         fontSize: "14px",
       }}
     >
-      © {new Date().getFullYear()} SwiftBus — Book your journey with comfort 🚌
+      © {new Date().getFullYear()} GoBus — Book your journey with comfort 🚌
     </footer>
   );
 }
