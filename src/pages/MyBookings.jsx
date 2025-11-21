@@ -15,7 +15,7 @@ export default function MyBookings() {
     }
 
     // ✅ Fetch bookings for the logged-in user
-    fetch(`http://localhost:5000/api/booking/user/${user.id}`)
+    fetch(`https://bus-backend-x2bc.onrender.com/api/booking/user/${user.id}`)
       .then((res) => res.json())
       .then((data) => {
         console.log("📦 Bookings API Response:", data);
@@ -35,7 +35,7 @@ export default function MyBookings() {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/booking/cancel/${bookingId}`,
+        `https://bus-backend-x2bc.onrender.com/api/booking/cancel/${bookingId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

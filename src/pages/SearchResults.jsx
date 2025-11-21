@@ -56,7 +56,7 @@ export default function SearchResults() {
     const encodedTo = encodeURIComponent(form.to.trim());
     const encodedDate = encodeURIComponent(form.date.trim());
 
-    const url = `http://localhost:5000/api/trip/search?from=${encodedFrom}&to=${encodedTo}&date=${encodedDate}`;
+    const url = `https://bus-backend-x2bc.onrender.com/api/trip/search?from=${encodedFrom}&to=${encodedTo}&date=${encodedDate}`;
 
     const res = await fetch(url);
     const data = await res.json();

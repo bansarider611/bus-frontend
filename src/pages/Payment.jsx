@@ -65,7 +65,7 @@ export default function Payment() {
       };
 
       // ✅ Send payment to backend (this triggers the email automatically)
-      const res = await fetch("http://localhost:5000/api/payment/add", {
+      const res = await fetch("https://bus-backend-x2bc.onrender.com/api/payment/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
