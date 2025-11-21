@@ -84,7 +84,7 @@ export default function Contact() {
       )}
 
       <div style={{ marginTop: 30, textAlign: "center", color: "var(--muted)" }}>
-        <p>📧 support@Gobus.com</p>
+        <p>📧 gobus2603@gmail.com</p>
         <p>📞 +91 98765 43210</p>
         <p>🏢 123 Swift Street, Ahmedabad, India</p>
       </div>

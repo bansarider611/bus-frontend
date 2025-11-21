@@ -38,57 +38,54 @@ export default function SearchResults() {
   };
 
   // 🔹 Handle search button click
-  const handleSearch = async (e) => {
-    e.preventDefault();
+      const handleSearch = async (e) => {
+  e.preventDefault();
+ console.log("Frontend sends:", form.from, form.to, form.date);
 
-    if (!form.from || !form.to || !form.date) {
-      alert("Please fill in all fields before searching.");
-      return;
-    }
+  if (!form.from || !form.to || !form.date) {
+    alert("Please fill in all fields before searching.");
+    return;
+  }
 
-    setLoading(true);
-    setSearched(true);
-    setAvailableBuses([]); // clear previous
+  setLoading(true);
+  setSearched(true);
+  setAvailableBuses([]);
 
-    try {
-      // Directly call the backend search API
-      const encodedFrom = encodeURIComponent(form.from.trim());
-      const encodedTo = encodeURIComponent(form.to.trim());
-      const url = `http://localhost:5000/api/trip/search?from=${encodedFrom}&to=${encodedTo}`;
+  try {
+    const encodedFrom = encodeURIComponent(form.from.trim());
+    const encodedTo = encodeURIComponent(form.to.trim());
+    const encodedDate = encodeURIComponent(form.date.trim());
 
-      const res = await fetch(url);
-      const data = await res.json();
+    const url = `http://localhost:5000/api/trip/search?from=${encodedFrom}&to=${encodedTo}&date=${encodedDate}`;
 
-      if (!data || !data.success) {
-        // handle both 404 response from backend and other failures
-        setAvailableBuses([]);
-        if (data && data.message) {
-          // show backend message only if returned
-          console.warn("Search result:", data.message);
-        }
-      } else {
-        // transform backend rows into the shape UI expects
-        const transformed = data.trips.map((t) => ({
-          id: t.ID,
-          name: t.BUS_NAME || "Unknown Bus",
-          departure: formatDateTime(t.DEPARTURE_TS),
-          arrival: formatDateTime(t.ARRIVAL_TS),
-          fare: t.PRICE,
-          startCity: t.START_CITY,
-          endCity: t.END_CITY,
-          raw: t, // keep original data if needed
-        }));
+    const res = await fetch(url);
+    const data = await res.json();
 
-        setAvailableBuses(transformed);
-      }
-    } catch (error) {
-      console.error("Error fetching trips:", error);
-      alert("Failed to fetch trips. Please try again.");
+    if (!data || !data.success) {
       setAvailableBuses([]);
-    } finally {
-      setLoading(false);
+    } else {
+      const transformed = data.trips.map((t) => ({
+        id: t.ID,
+        name: t.BUS_NAME || "Unknown Bus",
+        departure: formatDateTime(t.DEPARTURE_DATETIME),
+        arrival: formatDateTime(t.ARRIVAL_DATETIME),
+        fare: t.PRICE,
+        startCity: t.START_CITY,
+        endCity: t.END_CITY,
+        raw: t,
+      }));
+
+      setAvailableBuses(transformed);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching trips:", error);
+    alert("Failed to fetch trips. Please try again.");
+    setAvailableBuses([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // 🔹 When user clicks "View Seats"
   const handleSeatSelection = (bus) => {
