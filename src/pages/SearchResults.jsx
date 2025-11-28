@@ -4,6 +4,20 @@ import { useNavigate } from "react-router-dom";
 
 export default function SearchResults() {
   const navigate = useNavigate();
+ function convertToMySQL(dateStr) {
+  if (!dateStr) return "";
+
+  const parts = dateStr.split("-");
+
+  // if browser already gives yyyy-mm-dd
+  if (parts[0].length === 4) {
+    return dateStr;
+  }
+
+  // convert dd-mm-yyyy to yyyy-mm-dd
+  const [day, month, year] = parts;
+  return `${year}-${month}-${day}`;
+}
 
   const [form, setForm] = useState({
     from: "",
@@ -38,9 +52,9 @@ export default function SearchResults() {
   };
 
   // 🔹 Handle search button click
-      const handleSearch = async (e) => {
+const handleSearch = async (e) => {
   e.preventDefault();
- console.log("Frontend sends:", form.from, form.to, form.date);
+  console.log("Frontend sends:", form.from, form.to, form.date);
 
   if (!form.from || !form.to || !form.date) {
     alert("Please fill in all fields before searching.");
@@ -54,9 +68,12 @@ export default function SearchResults() {
   try {
     const encodedFrom = encodeURIComponent(form.from.trim());
     const encodedTo = encodeURIComponent(form.to.trim());
-    const encodedDate = encodeURIComponent(form.date.trim());
 
-    const url = `https://bus-backend-x2bc.onrender.com/api/trip/search?from=${encodedFrom}&to=${encodedTo}&date=${encodedDate}`;
+    // 🔥 FIX: Convert date to MySQL format
+    const fixedDate = convertToMySQL(form.date.trim());
+    const encodedDate = encodeURIComponent(fixedDate);
+
+    const url = `http://localhost:5000/api/trip/search?from=${encodedFrom}&to=${encodedTo}&date=${encodedDate}`;
 
     const res = await fetch(url);
     const data = await res.json();
@@ -85,6 +102,7 @@ export default function SearchResults() {
     setLoading(false);
   }
 };
+   
 
 
   // 🔹 When user clicks "View Seats"

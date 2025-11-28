@@ -36,7 +36,7 @@ export default function SeatSelection() {
 });
 
         } else {
-          const tripRes = await fetch(`https://bus-backend-x2bc.onrender.com/api/trip/${tripId}`);
+          const tripRes = await fetch(`http://localhost:5000/api/trip/${tripId}`);
           const tripData = await tripRes.json();
 
           if (tripData.success) {
@@ -59,7 +59,7 @@ export default function SeatSelection() {
         }
 
         const seatRes = await fetch(
-          `https://bus-backend-x2bc.onrender.com/api/booking/booked-seats/${tripId}`
+          `http://localhost:5000/api/booking/booked-seats/${tripId}`
         );
         const seatData = await seatRes.json();
         if (seatData.success) setBookedSeats(seatData.bookedSeats || []);
@@ -113,7 +113,7 @@ const payload = {
 
 
       const res = await fetch(
-  "https://bus-backend-x2bc.onrender.com/api/booking/create-with-seats",
+  "http://localhost:5000/api/booking/create-with-seats",
   {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -35,7 +35,7 @@ export default function MyBookings() {
 
     try {
       const res = await fetch(
-        `https://bus-backend-x2bc.onrender.com/api/booking/cancel/${bookingId}`,
+        `http://localhost:5000/api/booking/cancel/${bookingId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
